@@ -40,6 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    await _faceService.loadModel();
+    setState(() => _isInitialized = true);
+  }
+
   Future<void> _authenticateUser() async {
     setState(() {
       _isProcessing = true;
@@ -64,7 +68,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     for (final user in storedUsers) {
       final distance = _compareEmbeddings(user.embedding, inputEmbedding);
-      if (distance < 1.0) { // Puedes ajustar este umbral según pruebas
+      if (distance < 1.0) {
+        // Puedes ajustar este umbral según pruebas
         setState(() {
           _loginResult = 'Bienvenido, ${user.name}!';
           _isProcessing = false;
@@ -97,9 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -136,5 +139,5 @@ extension on double {
 }
 
 extension PowExtension on double {
-    double pow(double exponent) => math.pow(this, exponent).toDouble();
+  double pow(double exponent) => math.pow(this, exponent).toDouble();
 } // Usa math en producción para mayor precisión

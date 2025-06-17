@@ -163,7 +163,10 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                       MaterialPageRoute(builder: (_) => const RegisterScreen()),
                     );
                   },
-                  child: const Text('Registrar rostro'),
+                  child: const Text(
+                    'Registrar rostro',
+                    style: TextStyle(color: Colors.black),
+                  ),
                 ),
             ],
           ),

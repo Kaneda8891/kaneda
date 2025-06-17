@@ -52,6 +52,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
       return;
     }
+    await _faceService.loadModel();
+    final data = await rootBundle.load(_referenceImagePath);
+    final bytes = data.buffer.asUint8List();
+    final referenceImage = img.decodeImage(bytes);
+    if (referenceImage != null) {
+      _referenceEmbedding = await _faceService.predict(referenceImage);
+    }
+    setState(() => _isInitialized = true);
+  }
 
   Future<void> _captureAndRegister() async {
     if (_nameController.text.trim().isEmpty) {
