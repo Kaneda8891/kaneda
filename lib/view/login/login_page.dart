@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:avance2/screens/login_screen.dart';
+import 'package:avance2/screens/register_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,11 +14,21 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   final usuarioController = TextEditingController();
   final passController = TextEditingController();
   bool _mostrarPassword = false;
+  bool _hasFaceData = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _checkFaceData();
+  }
+
+  Future<void> _checkFaceData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final faceList = prefs.getStringList('user_faces') ?? [];
+    setState(() {
+      _hasFaceData = faceList.isNotEmpty;
+    });
   }
 
   @override
@@ -132,6 +144,27 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                 ),
                 child: const Text('Iniciar Sesión'),
               ),
+              const SizedBox(height: 10),
+              if (_hasFaceData)
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  },
+                  child: const Text('Iniciar sesión con rostro'),
+                )
+              else
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    );
+                  },
+                  child: const Text('Registrar rostro'),
+                ),
             ],
           ),
         ),

@@ -43,16 +43,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _initializeServices() async {
-    await _cameraService.initializeCamera();
-    await _faceService.loadModel();
-    final data = await rootBundle.load(_referenceImagePath);
-    final bytes = data.buffer.asUint8List();
-    final referenceImage = img.decodeImage(bytes);
-    if (referenceImage != null) {
-      _referenceEmbedding = await _faceService.predict(referenceImage);
+    final success = await _cameraService.initializeCamera();
+    if (!success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo iniciar la cámara')),
+        );
+      }
+      return;
     }
-    setState(() => _isInitialized = true);
-  }
 
   Future<void> _captureAndRegister() async {
     if (_nameController.text.trim().isEmpty) {
@@ -80,12 +79,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final embedding = await _faceService.predict(image);
 
     if (_referenceEmbedding != null) {
-      final distance =
-          UserFaceModel.euclideanDistance(embedding, _referenceEmbedding!);
+      final distance = UserFaceModel.euclideanDistance(
+        embedding,
+        _referenceEmbedding!,
+      );
       if (distance > _distanceThreshold) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Mantén una expresión seria para registrarte.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mantén una expresión seria para registrarte.'),
+          ),
+        );
         return;
       }
     }
@@ -108,6 +112,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Registro facial')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            if (_cameraService.cameraController.value.isInitialized)
+              SizedBox(
+                width: 300,
+                height: 250,
+                child: CameraPreview(_cameraService.cameraController),
+              ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Nombre'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isProcessing ? null : _captureAndRegister,
+              child: _isProcessing
+                  ? const CircularProgressIndicator()
+                  : const Text('Registrar'),
+            ),
+            if (_capturedImage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: Image.file(File(_capturedImage!.path), width: 150),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _cameraService.disposeCamera();
@@ -115,4 +160,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 }
-///final

@@ -2,26 +2,38 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
-
 class CameraService {
   late CameraController _cameraController;
   late List<CameraDescription> _cameras;
 
   CameraController get cameraController => _cameraController;
 
-  Future<void> initializeCamera() async {
-    _cameras = await availableCameras();
+  Future<bool> initializeCamera() async {
+    try {
+      _cameras = await availableCameras();
+      if (_cameras.isEmpty) {
+        debugPrint('No se encontraron cámaras disponibles');
+        return false;
+      }
 
-    _cameraController = CameraController(
-      _cameras.firstWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.front,
-        orElse: () => _cameras.first,
-      ),
-      ResolutionPreset.medium,
-      enableAudio: false,
-    );
+      _cameraController = CameraController(
+        _cameras.firstWhere(
+          (camera) => camera.lensDirection == CameraLensDirection.front,
+          orElse: () => _cameras.first,
+        ),
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
 
-    await _cameraController.initialize();
+      await _cameraController.initialize();
+      return true;
+    } on CameraException catch (e) {
+      debugPrint('Error al inicializar la cámara: $e');
+      return false;
+    } catch (e) {
+      debugPrint('Error desconocido al inicializar la cámara: $e');
+      return false;
+    }
   }
 
   Future<XFile?> takePicture() async {

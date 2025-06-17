@@ -30,10 +30,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _initializeServices() async {
-    await _cameraService.initializeCamera();
-    await _faceService.loadModel();
-    setState(() => _isInitialized = true);
-  }
+    final success = await _cameraService.initializeCamera();
+    if (!success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo iniciar la cámara')),
+        );
+      }
+      return;
+    }
 
   Future<void> _authenticateUser() async {
     setState(() {
