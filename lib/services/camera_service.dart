@@ -38,22 +38,31 @@ class CameraService {
 
   Future<XFile?> takePicture() async {
     if (!_cameraController.value.isInitialized) {
+      debugPrint('La cámara aún no está inicializada');
       return null;
     }
 
-    if (_cameraController.value.isTakingPicture) return null;
+    if (_cameraController.value.isTakingPicture) {
+      debugPrint('La cámara ya está tomando una foto');
+      return null;
+    }
 
     try {
       return await _cameraController.takePicture();
+      } on CameraException catch (e) {
+      debugPrint('Error de cámara al tomar la foto: $e');
+      return null;
     } on StateError catch (e) {
       // When the camera controller is not in the correct state (e.g. not
       // initialized or currently taking another picture) the camera plugin
       // throws a StateError via the checkState() function. Catch it here to
       // avoid crashing and simply return null so the caller can handle it.
+
+      // El plugin lanza StateError cuando la cámara no está en el estado correcto.
       debugPrint('Estado incorrecto al tomar la foto: $e');
       return null;
     } catch (e) {
-      debugPrint('Error al tomar la foto: $e');
+      debugPrint('Error desconocido al tomar la foto: $e');
       return null;
     }
   }

@@ -53,6 +53,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final XFile? file = await _cameraService.takePicture();
     if (file == null) {
       setState(() => _isProcessing = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo tomar la foto.')),
+        );
+      }
       return;
     }
 
@@ -60,6 +65,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final image = img.decodeImage(bytes);
     if (image == null) {
       setState(() => _isProcessing = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Imagen inválida.')),
+        );
+      }
       return;
     }
 
