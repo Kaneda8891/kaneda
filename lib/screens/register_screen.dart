@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
+import 'package:flutter/services.dart' show rootBundle;
 import '../services/camera_service.dart';
 import '../services/face_recognition_service.dart';
 import '../services/storage_service.dart';
@@ -22,6 +23,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _faceService = FaceRecognitionService();
   final _storageService = StorageService();
 
+  // Path to the neutral expression reference image included as an asset.
+  final String _referenceImagePath = 'assets/tflite/face.jpg';
+
+  // Distance threshold for validating that the expression is serious.
+  final double _distanceThreshold = 1.0;
+
+  // Embedding for the neutral expression reference image.
+  List<double>? _referenceEmbedding;
+
   bool _isInitialized = false;
   bool _isProcessing = false;
   XFile? _capturedImage;
@@ -35,10 +45,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _initializeServices() async {
     await _cameraService.initializeCamera();
     await _faceService.loadModel();
+    final data = await rootBundle.load(_referenceImagePath);
+    final bytes = data.buffer.asUint8List();
+    final referenceImage = img.decodeImage(bytes);
+    if (referenceImage != null) {
+      _referenceEmbedding = await _faceService.predict(referenceImage);
+    }
     setState(() => _isInitialized = true);
   }
 
   Future<void> _captureAndRegister() async {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa un nombre.')),
+      );
+      return;
+    }
+
     setState(() => _isProcessing = true);
 
     final XFile? file = await _cameraService.takePicture();
@@ -55,6 +78,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final embedding = await _faceService.predict(image);
+
+    if (_referenceEmbedding != null) {
+      final distance =
+          UserFaceModel.euclideanDistance(embedding, _referenceEmbedding!);
+      if (distance > _distanceThreshold) {
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Mantén una expresión seria para registrarte.')));
+        return;
+      }
+    }
+
     final user = UserFaceModel(
       name: _nameController.text.trim(),
       embedding: embedding,
@@ -79,48 +114,5 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _faceService.dispose();
     super.dispose();
   }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Registrar rostro')),
-      body: Column(
-        children: [
-          if (_cameraService.cameraController.value.isInitialized)
-            AspectRatio(
-              aspectRatio:
-                  _cameraService.cameraController.value.aspectRatio,
-              child: CameraPreview(_cameraService.cameraController),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre del usuario',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: _isProcessing ? null : _captureAndRegister,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Capturar y registrar'),
-          ),
-          if (_capturedImage != null)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Image.file(File(_capturedImage!.path), height: 160),
-            ),
-        ],
-      ),
-    );
-  }
 }
+///final

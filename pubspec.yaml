@@ -1,11 +1,11 @@
-name: taller_aguilar
-description: Proyecto Flutter con reconocimiento facial usando MobileFaceNet
+name: avance2
+description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
   sdk: ^3.8.0
-
+  
 dependencies:
   flutter:
     sdk: flutter

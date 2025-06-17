@@ -9,9 +9,10 @@ class FaceRecognitionService {
 
   /// Carga el modelo MobileFaceNet
   Future<void> loadModel() async {
-    _interpreter = await Interpreter.fromAsset('tflite/mobilefacenet.tflite');
+    _interpreter =
+        await Interpreter.fromAsset('assets/tflite/mobilefacenet.tflite');
   }
-
+  
   /// Realiza la predicción del embedding facial
   Future<List<double>> predict(img.Image faceImage) async {
     final resized = img.copyResize(faceImage, width: 112, height: 112);
@@ -31,9 +32,9 @@ class FaceRecognitionService {
       for (int x = 0; x < 112; x++) {
         final pixel = image.getPixel(x, y);
 
-        convertedBytes[pixelIndex++] = (img.getRed(pixel) - 128) / 128.0;
-        convertedBytes[pixelIndex++] = (img.getGreen(pixel) - 128) / 128.0;
-        convertedBytes[pixelIndex++] = (img.getBlue(pixel) - 128) / 128.0;
+        convertedBytes[pixelIndex++] = (pixel.r - 127.5) / 127.5;
+        convertedBytes[pixelIndex++] = (pixel.g - 127.5) / 127.5;
+        convertedBytes[pixelIndex++] = (pixel.b - 127.5) / 127.5;
       }
     }
 

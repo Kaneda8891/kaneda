@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
+import 'dart:math' as math;
 import '../services/camera_service.dart';
 import '../services/face_recognition_service.dart';
 import '../services/storage_service.dart';
@@ -78,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
     for (int i = 0; i < a.length; i++) {
       sum += (a[i] - b[i]) * (a[i] - b[i]);
     }
-    return sum.sqrt();
+    return math.sqrt(sum);
   }
 
   @override
@@ -101,9 +102,9 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Column(
         children: [
           if (_cameraService.cameraController.value.isInitialized)
-            AspectRatio(
-              aspectRatio:
-                  _cameraService.cameraController.value.aspectRatio,
+            SizedBox(
+              width: 300,
+              height: 250,
               child: CameraPreview(_cameraService.cameraController),
             ),
           const SizedBox(height: 20),
@@ -126,10 +127,9 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 extension on double {
-  double sqrt() => (this > 0) ? (this.abs()).toDouble().pow(0.5) : 0;
+  double sqrt() => this >= 0 ? math.sqrt(this) : 0;
 }
 
 extension PowExtension on double {
-  double pow(double exponent) =>
-      double.parse((this.toDouble()).toStringAsFixed(10)).toDouble().pow(exponent);
+    double pow(double exponent) => math.pow(this, exponent).toDouble();
 } // Usa math en producción para mayor precisión

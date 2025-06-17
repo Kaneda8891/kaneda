@@ -9,6 +9,7 @@ import 'package:avance2/view/login/splash_screen.dart';
 import 'package:avance2/view/login/login_page.dart';
 import 'firebase_options.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
