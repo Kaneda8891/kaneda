@@ -10,8 +10,7 @@ class CameraService {
   CameraController get cameraController => _cameraController;
 
   /// Inicializa la cámara frontal con resolución HD (720p)
-  /// 📸 ResolutionPreset.medium = 1280x720 (horizontal), pero útil también para rostro en vertical
-  /// ✅ Ideal para reconocimiento facial, buena calidad + rendimiento
+  /// ResolutionPreset.medium = 1280x720 (horizontal), pero útil también para rostro en vertical
   Future<bool> initializeCamera() async {
     try {
       _cameras = await availableCameras();
@@ -31,7 +30,7 @@ class CameraService {
 
       await _cameraController.initialize();
 
-      // ✅ Muestra la resolución actual en consola (solo en debug)
+      // Muestra la resolución actual en consola (solo en debug)
       final previewSize = _cameraController.value.previewSize;
       debugPrint('Resolución seleccionada: ${previewSize?.width}x${previewSize?.height}');
 
@@ -71,7 +70,6 @@ class CameraService {
     }
   }
 
-  /// Libera los recursos de la cámara
   void disposeCamera() {
     _cameraController.dispose();
   }

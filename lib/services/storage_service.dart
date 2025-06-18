@@ -71,7 +71,6 @@ class StorageService {
   }
 
   /// Guarda una imagen de rostro en la carpeta assets/tflite/
-  /// con nombre igual al ID (ejemplo: assets/tflite/123.jpg)
   Future<void> saveFaceImage(img.Image faceImage, String id) async {
     final directory = Directory('assets/tflite');
 

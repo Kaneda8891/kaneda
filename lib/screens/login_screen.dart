@@ -54,7 +54,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final imageBytes = byteData.buffer.asUint8List();
     final image = img.decodeImage(imageBytes);
     if (image != null) {
-      _validEmbedding = await _faceService.predict(image); // Aquí se genera el embedding de referencia
+      _validEmbedding = await _faceService.predict(
+        image,
+      ); // Aquí se genera el embedding de referencia
     }
   }
 
@@ -144,46 +146,45 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
-  if (!_isInitialized) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
-  }
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-  return Scaffold(
-    appBar: AppBar(title: const Text('Login facial')),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (_cameraService.cameraController.value.isInitialized)
-            Center(
-              child: SizedBox(
-                width: 320,  
-                height: 480,  
-                child: CameraPreview(_cameraService.cameraController),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login facial')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (_cameraService.cameraController.value.isInitialized)
+              Center(
+                child: SizedBox(
+                  width: 320,
+                  height: 480,
+                  child: CameraPreview(_cameraService.cameraController),
+                ),
               ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isProcessing ? null : _authenticateUser,
+              child: _isProcessing
+                  ? const CircularProgressIndicator()
+                  : const Text('Iniciar sesión con rostro'),
             ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _isProcessing ? null : _authenticateUser,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Iniciar sesión con rostro'),
-          ),
-          const SizedBox(height: 20),
-          if (_loginResult != null)
-            Text(
-              _loginResult!,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            const SizedBox(height: 20),
+            if (_loginResult != null)
+              Text(
+                _loginResult!,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }
