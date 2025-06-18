@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:avance2/models/usuario.dart';
 import 'package:avance2/screens/register_screen.dart';
+import 'dart:io';
 
 class UsuarioForm extends StatefulWidget {
   final void Function(Usuario) onSubmit;
@@ -20,6 +21,7 @@ class _UsuarioFormState extends State<UsuarioForm> {
   late TextEditingController _rol;
 
   bool _rostroRegistrado = false;
+  String? _rostroPath;
 
   @override
   void initState() {
@@ -48,14 +50,17 @@ class _UsuarioFormState extends State<UsuarioForm> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    await Navigator.push(
+    final path = await Navigator.push<String>(
       context,
       MaterialPageRoute(
         builder: (_) => RegisterScreen(nombre: _nombre.text.trim()),
       ),
     );
-    if (mounted) {
-      setState(() => _rostroRegistrado = true);
+    if (mounted && path != null) {
+      setState(() {
+        _rostroRegistrado = true;
+        _rostroPath = path;
+      });
     }
   }
 
@@ -84,9 +89,21 @@ class _UsuarioFormState extends State<UsuarioForm> {
             if (_rostroRegistrado)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  'Rostro registrado',
-                  style: TextStyle(color: Colors.green[700]),
+                child: Column(
+                  children: [
+                    if (_rostroPath != null)
+                      Image.file(
+                        File(_rostroPath!),
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Rostro registrado',
+                      style: TextStyle(color: Colors.green[700]),
+                    ),
+                  ],
                 ),
               ),
             const SizedBox(height: 20),
