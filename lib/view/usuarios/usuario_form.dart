@@ -19,7 +19,7 @@ class _UsuarioFormState extends State<UsuarioForm> {
   late TextEditingController _correo;
   late TextEditingController _rol;
 
-  bool _rostroRegistrado = false; // ✅ Declaración correcta
+  bool _rostroRegistrado = false;
 
   @override
   void initState() {
@@ -45,9 +45,14 @@ class _UsuarioFormState extends State<UsuarioForm> {
   }
 
   Future<void> _abrirRegistroRostro() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+      MaterialPageRoute(
+        builder: (_) => RegisterScreen(nombre: _nombre.text.trim()),
+      ),
     );
     if (mounted) {
       setState(() => _rostroRegistrado = true);

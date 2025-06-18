@@ -11,14 +11,14 @@ import '../services/storage_service.dart';
 import '../models/user_face_model.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String nombre;
+  const RegisterScreen({super.key, required this.nombre});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _nameController = TextEditingController();
   final _cameraService = CameraService();
   final _faceService = FaceRecognitionService();
   final _storageService = StorageService();
@@ -63,12 +63,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _captureAndRegister() async {
-    if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa un nombre.')),
-      );
-      return;
-    }
 
     setState(() => _isProcessing = true);
 
@@ -104,7 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final user = UserFaceModel(
-      name: _nameController.text.trim(),
+      name: widget.nombre.trim(),
       embedding: embedding,
     );
 
@@ -139,10 +133,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: CameraPreview(_cameraService.cameraController),
               ),
             const SizedBox(height: 20),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Nombre'),
-            ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isProcessing ? null : _captureAndRegister,
@@ -163,7 +153,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _cameraService.disposeCamera();
     _faceService.dispose();
     super.dispose();
