@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:avance2/screens/login_screen.dart';
-import 'package:avance2/screens/register_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -153,21 +152,20 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                       MaterialPageRoute(builder: (_) => const LoginScreen()),
                     );
                   },
-                  child: const Text('Iniciar sesión con rostro'),
+                  child: const Text('Iniciar sesión con rostro', style: TextStyle(color: Colors.black),),
+                  
                 )
               else
                 TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
                     );
                   },
-                  child: const Text(
-                    'Registrar rostro',
-                    style: TextStyle(color: Colors.black),
-                  ),
-                ),
+                  child: const Text('Iniciar sesión con rostro', style: TextStyle(color: Colors.black),),
+                  
+                )
             ],
           ),
         ),

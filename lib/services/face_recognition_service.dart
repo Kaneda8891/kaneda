@@ -19,7 +19,11 @@ class FaceRecognitionService {
     final Float32List input = imageToFloat32(resized);
     final List<List<double>> output = List.generate(1, (_) => List.filled(192, 0.0));
 
-    _interpreter.run(input.buffer.asFloat32List(), output);
+    // MobileFaceNet espera un tensor de 4 dimensiones: [1, 112, 112, 3].
+    // Si se pasa el arreglo plano directamente el intérprete lanza
+    // `input->dims->size != 4`. Usamos `reshape` para adaptar el buffer al
+    // formato que la librería espera.
+    _interpreter.run(input.reshape([1, 112, 112, 3]), output);
     return output[0];
   }
 

@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
 import 'dart:math' as math;
+
 import '../services/camera_service.dart';
 import '../services/face_recognition_service.dart';
 import '../services/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _loginResult = null;
     });
 
+    // Tomar una foto con la cámara
     final XFile? file = await _cameraService.takePicture();
     if (file == null) {
       setState(() => _isProcessing = false);
@@ -61,21 +64,26 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    // Convertir imagen a formato compatible para el modelo
     final bytes = await file.readAsBytes();
     final image = img.decodeImage(bytes);
     if (image == null) {
       setState(() => _isProcessing = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Imagen inválida.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Imagen inválida.')));
       }
       return;
     }
 
+    // Obtener el embedding de la imagen capturada
     final inputEmbedding = await _faceService.predict(image);
+
+    // Cargar los usuarios registrados desde almacenamiento
     final storedUsers = await _storageService.loadUserFaces();
 
+    // Comparar el embedding actual con los almacenados
     for (final user in storedUsers) {
       final distance = _compareEmbeddings(user.embedding, inputEmbedding);
       if (distance < 1.0) {
@@ -84,16 +92,23 @@ class _LoginScreenState extends State<LoginScreen> {
           _loginResult = 'Bienvenido, ${user.name}!';
           _isProcessing = false;
         });
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('logueado', true);
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/bienvenida');
+        }
         return;
       }
     }
 
+    // Si no se encontró coincidencia
     setState(() {
       _loginResult = 'No se encontró coincidencia facial';
       _isProcessing = false;
     });
   }
 
+  // Cálculo de distancia euclidiana entre embeddings
   double _compareEmbeddings(List<double> a, List<double> b) {
     double sum = 0.0;
     for (int i = 0; i < a.length; i++) {
@@ -117,37 +132,51 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Login facial')),
-      body: Column(
-        children: [
-          if (_cameraService.cameraController.value.isInitialized)
-            SizedBox(
-              width: 300,
-              height: 250,
-              child: CameraPreview(_cameraService.cameraController),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (_cameraService.cameraController.value.isInitialized)
+              Center(
+                // 🔹 Centro horizontal
+                child: SizedBox(
+                  width: 300,
+                  height: 250,
+                  child: CameraPreview(
+                    _cameraService.cameraController,
+                  ), // Vista previa cámara
+                ),
+              ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isProcessing ? null : _authenticateUser,
+              child: _isProcessing
+                  ? const CircularProgressIndicator() // Indicador mientras procesa
+                  : const Text('Iniciar sesión con rostro'),
             ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _isProcessing ? null : _authenticateUser,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Iniciar sesión con rostro'),
-          ),
-          const SizedBox(height: 20),
-          if (_loginResult != null)
-            Text(
-              _loginResult!,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-        ],
+            const SizedBox(height: 20),
+            if (_loginResult != null)
+              Text(
+                _loginResult!,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ), // Mensaje resultado
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
+// Extensión para manejar raíz cuadrada
 extension on double {
   double sqrt() => this >= 0 ? math.sqrt(this) : 0;
 }
 
+// Extensión para potencia
 extension PowExtension on double {
   double pow(double exponent) => math.pow(this, exponent).toDouble();
 } // Usa math en producción para mayor precisión

@@ -96,7 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Mantén una expresión seria para registrarte.'),
+            content: Text('Mantén una expresión seria y luminosa para registrar.'),
           ),
         );
         return;
