@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/camera_service.dart';
 import '../services/face_recognition_service.dart';
-import '../services/face_crop_service.dart'; // ✅ Importado para recortar rostro
+import '../services/face_crop_service.dart'; // Importado para recortar rostro
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,7 +20,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _cameraService = CameraService();
   final _faceService = FaceRecognitionService();
-  final _faceCropService = FaceCropService(); // ✅ Servicio de recorte
+  final _faceCropService = FaceCropService(); // Servicio de recorte
 
   bool _isInitialized = false;
   bool _isProcessing = false;

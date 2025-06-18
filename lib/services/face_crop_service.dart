@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -5,40 +6,36 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 class FaceCropService {
   final FaceDetector _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
-      enableContours: false,
-      enableClassification: false,
+      performanceMode: FaceDetectorMode.accurate,
     ),
   );
 
-  /// Detecta y recorta el rostro de una imagen [inputImageBytes]
+  /// Detecta y recorta el rostro de una imagen JPEG desde bytes
   Future<img.Image?> detectAndCropFace(Uint8List inputImageBytes) async {
     final inputImage = InputImage.fromBytes(
       bytes: inputImageBytes,
-      inputImageData: InputImageData(
-        size: const Size(480, 640), // ajustar al tamaño real de la imagen
-        imageRotation: InputImageRotation.rotation0deg,
-        inputImageFormat: InputImageFormat.nv21,
-        planeData: [], // se puede dejar vacío para JPG
+      metadata: InputImageMetadata(
+        size: const Size(720, 1280), // Estimado o real (según cámara)
+        rotation: InputImageRotation.rotation0deg,
+        format: InputImageFormat.bgra8888, // o .nv21 si usas cámara en stream
+        bytesPerRow: 720 * 4, // 4 bytes por pixel para bgra8888
       ),
     );
 
     final faces = await _faceDetector.processImage(inputImage);
-
     if (faces.isEmpty) return null;
 
-    final face = faces.first.boundingBox;
-    final image = img.decodeImage(inputImageBytes);
-    if (image == null) return null;
+    final img.Image? original = img.decodeImage(inputImageBytes);
+    if (original == null) return null;
 
-    final cropped = img.copyCrop(
-      image,
-      x: face.left.toInt(),
-      y: face.top.toInt(),
-      width: face.width.toInt(),
-      height: face.height.toInt(),
-    );
+    final faceBox = faces.first.boundingBox;
 
-    return cropped;
+    final int x = faceBox.left.toInt().clamp(0, original.width - 1);
+    final int y = faceBox.top.toInt().clamp(0, original.height - 1);
+    final int w = faceBox.width.toInt().clamp(1, original.width - x);
+    final int h = faceBox.height.toInt().clamp(1, original.height - y);
+
+    return img.copyCrop(original, x: x, y: y, width: w, height: h);
   }
 
   void dispose() {
