@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:avance2/models/usuario.dart';
+import 'package:avance2/screens/register_screen.dart';
 
 class UsuarioForm extends StatefulWidget {
   final void Function(Usuario) onSubmit;
@@ -17,6 +18,8 @@ class _UsuarioFormState extends State<UsuarioForm> {
   late TextEditingController _nombre;
   late TextEditingController _correo;
   late TextEditingController _rol;
+
+  bool _rostroRegistrado = false; // ✅ Declaración correcta
 
   @override
   void initState() {
@@ -41,6 +44,16 @@ class _UsuarioFormState extends State<UsuarioForm> {
     }
   }
 
+  Future<void> _abrirRegistroRostro() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+    );
+    if (mounted) {
+      setState(() => _rostroRegistrado = true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -54,6 +67,23 @@ class _UsuarioFormState extends State<UsuarioForm> {
             _campo('Nombre', _nombre),
             _campo('Correo', _correo, tipo: TextInputType.emailAddress),
             _campo('Rol', _rol),
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: _abrirRegistroRostro,
+              icon: const Icon(Icons.face),
+              label: const Text('Registrar rostro (opcional)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF074F8A),
+              ),
+            ),
+            if (_rostroRegistrado)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Rostro registrado',
+                  style: TextStyle(color: Colors.green[700]),
+                ),
+              ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _guardar,
