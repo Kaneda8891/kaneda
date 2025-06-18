@@ -144,28 +144,20 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                 child: const Text('Iniciar Sesión'),
               ),
               const SizedBox(height: 10),
-              if (_hasFaceData)
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  },
-                  child: const Text('Iniciar sesión con rostro', style: TextStyle(color: Colors.black),),
-                  
-                )
-              else
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  },
-                  child: const Text('Iniciar sesión con rostro', style: TextStyle(color: Colors.black),),
-                  
-                )
+
+
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                child: const Text(
+                  'Iniciar sesión con rostro',
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
             ],
           ),
         ),
