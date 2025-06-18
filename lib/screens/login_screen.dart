@@ -4,9 +4,11 @@ import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
 import 'dart:math' as math;
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../services/camera_service.dart';
 import '../services/face_recognition_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/face_crop_service.dart'; // ✅ Importado para recortar rostro
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,11 +20,12 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _cameraService = CameraService();
   final _faceService = FaceRecognitionService();
+  final _faceCropService = FaceCropService(); // ✅ Servicio de recorte
 
   bool _isInitialized = false;
   bool _isProcessing = false;
   String? _loginResult;
-  List<double>? _validEmbedding; // Embedding generado desde face.jpg
+  List<double>? _validEmbedding;
 
   @override
   void initState() {
@@ -30,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _initialize();
   }
 
-  /// Inicializa cámara y carga modelo + referencia
   Future<void> _initialize() async {
     final success = await _cameraService.initializeCamera();
     if (!success) {
@@ -42,21 +44,18 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    await _faceService.loadModel(); // Carga el modelo .tflite
-    await _loadReferenceEmbedding(); // Carga embedding desde face.jpg
+    await _faceService.loadModel();
+    await _loadReferenceEmbedding();
 
     setState(() => _isInitialized = true);
   }
 
-  /// Carga face.jpg desde assets y genera su embedding
   Future<void> _loadReferenceEmbedding() async {
     final byteData = await rootBundle.load('assets/tflite/face.jpg');
     final imageBytes = byteData.buffer.asUint8List();
     final image = img.decodeImage(imageBytes);
     if (image != null) {
-      _validEmbedding = await _faceService.predict(
-        image,
-      ); // Aquí se genera el embedding de referencia
+      _validEmbedding = await _faceService.predict(image);
     }
   }
 
@@ -69,31 +68,37 @@ class _LoginScreenState extends State<LoginScreen> {
       _loginResult = null;
     });
 
-    // Toma una foto desde la cámara frontal
     final XFile? file = await _cameraService.takePicture();
     if (file == null) {
       setState(() => _isProcessing = false);
       return;
     }
 
-    // Convierte la imagen capturada en tipo img.Image
     final bytes = await file.readAsBytes();
-    final image = img.decodeImage(bytes);
-    if (image == null) {
-      setState(() => _isProcessing = false);
+
+    // ✅ Recorta el rostro detectado con ML Kit antes de procesarlo
+    final croppedImage = await _faceCropService.detectAndCropFace(bytes);
+
+    if (croppedImage == null) {
+      setState(() {
+        _isProcessing = false;
+        _loginResult = 'Rostro no detectado. Intenta de nuevo.';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se detectó ningún rostro.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
-    // Genera el embedding del rostro capturado
-    final inputEmbedding = await _faceService.predict(image);
+    final inputEmbedding = await _faceService.predict(croppedImage);
 
-    // Compara ambos embeddings (face.jpg vs rostro capturado)
     final distance = _compareEmbeddings(_validEmbedding!, inputEmbedding);
-    print('Distancia: $distance'); // Para depuración
+    print('Distancia: $distance');
 
-    // Si la distancia es suficientemente baja, hay coincidencia
     if (distance < 0.45) {
-      // Coincidencia con el rostro autorizado
       setState(() {
         _loginResult = 'Acceso concedido';
         _isProcessing = false;
@@ -112,7 +117,6 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/bienvenida');
       }
     } else {
-      // Rostro no coincide con face.jpg
       setState(() {
         _loginResult = 'Acceso denegado. Rostro no autorizado.';
         _isProcessing = false;
@@ -129,7 +133,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// Calcula la distancia euclidiana entre dos embeddings
   double _compareEmbeddings(List<double> a, List<double> b) {
     double sum = 0.0;
     for (int i = 0; i < a.length; i++) {
@@ -142,6 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _cameraService.disposeCamera();
     _faceService.dispose();
+    _faceCropService.dispose(); // Liberar ML Kit
     super.dispose();
   }
 
