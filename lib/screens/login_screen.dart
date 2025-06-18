@@ -6,9 +6,10 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Servicios
 import '../services/camera_service.dart';
-import '../services/face_recognition_service.dart' as recog; // Alias
-import '../services/face_crop_service.dart' as crop; // Alias
+import '../services/face_recognition_service.dart' as recog;
+import '../services/face_crop_service.dart' as crop;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isInitialized = false;
   bool _isProcessing = false;
   String? _loginResult;
-  List<List<double>>? _validEmbeddings;
+  List<List<double>>? _validEmbeddings; // Referencias del rostro
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _initialize();
   }
 
+  /// Inicializa cámara y modelo
   Future<void> _initialize() async {
     final success = await _cameraService.initializeCamera();
     if (!success) {
@@ -49,6 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isInitialized = true);
   }
 
+  /// Carga múltiples embeddings desde la imagen de referencia
   Future<void> _loadReferenceEmbeddings() async {
     final byteData = await rootBundle.load('assets/tflite/face.jpg');
     final imageBytes = byteData.buffer.asUint8List();
@@ -58,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Reconocimiento facial con recorte y comparación
   Future<void> _authenticateUser() async {
     if (_validEmbeddings == null) return;
 
@@ -127,6 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Distancia euclidiana entre embeddings
   double _compareEmbeddings(List<double> a, List<double> b) {
     double sum = 0.0;
     for (int i = 0; i < a.length; i++) {

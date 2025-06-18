@@ -1,65 +1,42 @@
+import 'dart:io';
 import 'dart:typed_data';
-import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
-class FaceRecognitionService {
-  late Interpreter _interpreter;
+class FaceCropService {
+  final FaceDetector _faceDetector = FaceDetector(
+    options: FaceDetectorOptions(
+      performanceMode: FaceDetectorMode.accurate,
+    ),
+  );
 
-  /// 🔢 Tamaño esperado por el modelo
-  static const int modelInputSize = 112;
+  /// Detecta y recorta el rostro desde la ruta de una imagen
+  Future<img.Image?> detectAndCropFace(String imagePath) async {
+    try {
+      final inputImage = InputImage.fromFilePath(imagePath);
+      final faces = await _faceDetector.processImage(inputImage);
 
-  /// Carga el modelo MobileFaceNet
-  Future<void> loadModel() async {
-    _interpreter = await Interpreter.fromAsset('assets/tflite/mobilefacenet.tflite');
-  }
+      if (faces.isEmpty) return null;
 
-  /// Genera un embedding a partir de una imagen facial
-  Future<List<double>> predict(img.Image faceImage) async {
-    final resized = img.copyResize(faceImage, width: modelInputSize, height: modelInputSize);
-    final Float32List input = imageToFloat32(resized);
-    final List<List<double>> output = List.generate(1, (_) => List.filled(192, 0.0));
+      final Uint8List bytes = await File(imagePath).readAsBytes();
+      final img.Image? original = img.decodeImage(bytes);
+      if (original == null) return null;
 
-    _interpreter.run(input.reshape([1, modelInputSize, modelInputSize, 3]), output);
-    return output[0];
-  }
+      final faceBox = faces.first.boundingBox;
 
-  /// Genera múltiples embeddings simulando ligeras rotaciones del rostro
-  Future<List<List<double>>> generateAugmentedEmbeddings(img.Image image) async {
-    final List<List<double>> embeddings = [];
-    final List<int> angles = [-10, 0, 10]; // rotaciones en grados
+      final int x = faceBox.left.toInt().clamp(0, original.width - 1);
+      final int y = faceBox.top.toInt().clamp(0, original.height - 1);
+      final int w = faceBox.width.toInt().clamp(1, original.width - x);
+      final int h = faceBox.height.toInt().clamp(1, original.height - y);
 
-    for (final angle in angles) {
-      final rotated = img.copyRotate(image, angle: angle);
-      final resized = img.copyResize(rotated, width: modelInputSize, height: modelInputSize);
-      final Float32List input = imageToFloat32(resized);
-      final List<List<double>> output = List.generate(1, (_) => List.filled(192, 0.0));
-      _interpreter.run(input.reshape([1, modelInputSize, modelInputSize, 3]), output);
-      embeddings.add(output[0]);
+      return img.copyCrop(original, x: x, y: y, width: w, height: h);
+    } catch (e) {
+      print('Error al recortar el rostro: $e');
+      return null;
     }
-
-    return embeddings;
   }
 
-  /// Convierte imagen a Float32List normalizado para el modelo
-  Float32List imageToFloat32(img.Image image) {
-    final Float32List convertedBytes = Float32List(modelInputSize * modelInputSize * 3);
-    int pixelIndex = 0;
-
-    for (int y = 0; y < modelInputSize; y++) {
-      for (int x = 0; x < modelInputSize; x++) {
-        final pixel = image.getPixel(x, y);
-
-        convertedBytes[pixelIndex++] = (pixel.r - 127.5) / 127.5;
-        convertedBytes[pixelIndex++] = (pixel.g - 127.5) / 127.5;
-        convertedBytes[pixelIndex++] = (pixel.b - 127.5) / 127.5;
-      }
-    }
-
-    return convertedBytes;
-  }
-
-  /// Libera recursos del modelo
   void dispose() {
-    _interpreter.close();
+    _faceDetector.close();
   }
 }
