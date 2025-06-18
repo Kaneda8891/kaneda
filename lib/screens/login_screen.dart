@@ -7,8 +7,8 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/camera_service.dart';
-import '../services/face_recognition_service.dart';
-import '../services/face_crop_service.dart'; // Importado para recortar rostro
+import '../services/face_recognition_service.dart' as recog; // Alias
+import '../services/face_crop_service.dart' as crop; // Alias
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,13 +19,13 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _cameraService = CameraService();
-  final _faceService = FaceRecognitionService();
-  final _faceCropService = FaceCropService(); // Servicio de recorte
+  final recog.FaceRecognitionService _faceService = recog.FaceRecognitionService();
+  final crop.FaceCropService _faceCropService = crop.FaceCropService();
 
   bool _isInitialized = false;
   bool _isProcessing = false;
   String? _loginResult;
-  List<double>? _validEmbedding;
+  List<List<double>>? _validEmbeddings;
 
   @override
   void initState() {
@@ -45,23 +45,21 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     await _faceService.loadModel();
-    await _loadReferenceEmbedding();
-
+    await _loadReferenceEmbeddings();
     setState(() => _isInitialized = true);
   }
 
-  Future<void> _loadReferenceEmbedding() async {
+  Future<void> _loadReferenceEmbeddings() async {
     final byteData = await rootBundle.load('assets/tflite/face.jpg');
     final imageBytes = byteData.buffer.asUint8List();
     final image = img.decodeImage(imageBytes);
     if (image != null) {
-      _validEmbedding = await _faceService.predict(image);
+      _validEmbeddings = await _faceService.generateAugmentedEmbeddings(image);
     }
   }
 
-  /// AQUÍ HACE LA FUNCIÓN DE RECONOCIMIENTO FACIAL
   Future<void> _authenticateUser() async {
-    if (_validEmbedding == null) return;
+    if (_validEmbeddings == null) return;
 
     setState(() {
       _isProcessing = true;
@@ -74,11 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final bytes = await file.readAsBytes();
-
-    // ✅ Recorta el rostro detectado con ML Kit antes de procesarlo
-    final croppedImage = await _faceCropService.detectAndCropFace(bytes);
-
+    final croppedImage = await _faceCropService.detectAndCropFace(file.path);
     if (croppedImage == null) {
       setState(() {
         _isProcessing = false;
@@ -94,11 +88,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final inputEmbedding = await _faceService.predict(croppedImage);
+    final match = _validEmbeddings!.any(
+      (ref) => _compareEmbeddings(ref, inputEmbedding) < 0.45,
+    );
 
-    final distance = _compareEmbeddings(_validEmbedding!, inputEmbedding);
-    print('Distancia: $distance');
-
-    if (distance < 0.45) {
+    if (match) {
       setState(() {
         _loginResult = 'Acceso concedido';
         _isProcessing = false;
@@ -145,14 +139,16 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _cameraService.disposeCamera();
     _faceService.dispose();
-    _faceCropService.dispose(); // Liberar ML Kit
+    _faceCropService.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
