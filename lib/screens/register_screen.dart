@@ -11,8 +11,9 @@ import '../services/storage_service.dart';
 import '../models/user_face_model.dart';
 
 class RegisterScreen extends StatefulWidget {
+  final String id;
   final String nombre;
-  const RegisterScreen({super.key, required this.nombre});
+  const RegisterScreen({super.key, required this.id, required this.nombre});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -100,9 +101,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final user = UserFaceModel(
       name: widget.nombre.trim(),
       embedding: embedding,
+      imagePath: file.path,
     );
 
-    await _storageService.saveUserFace(user);
+    await _storageService.saveFaceImage(image, widget.id.trim());
 
     setState(() {
       _capturedImage = file;

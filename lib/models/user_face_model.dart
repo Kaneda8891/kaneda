@@ -5,10 +5,12 @@ import 'dart:math';
 class UserFaceModel {
   final String name;
   final List<double> embedding;
+  final String? imagePath;
 
   UserFaceModel({
     required this.name,
     required this.embedding,
+    this.imagePath,
   });
 
   // Para guardar como mapa (por ejemplo, en SharedPreferences o Firestore)
@@ -16,6 +18,7 @@ class UserFaceModel {
     return {
       'name': name,
       'embedding': embedding,
+      'imagePath': imagePath,
     };
   }
 
@@ -24,6 +27,7 @@ class UserFaceModel {
     return UserFaceModel(
       name: map['name'],
       embedding: List<double>.from(map['embedding']),
+      imagePath: map['imagePath'],
     );
   }
 
