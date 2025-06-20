@@ -13,7 +13,22 @@ class FaceCropService {
   /// Detecta y recorta el rostro desde la ruta de una imagen
   Future<img.Image?> detectAndCropFace(String imagePath) async {
     try {
-      final inputImage = InputImage.fromFilePath(imagePath);
+      InputImage inputImage;
+      try {
+        // Intenta leer la imagen directamente. Si la lectura de EXIF falla,
+        // lanzará una excepción.
+        inputImage = InputImage.fromFilePath(imagePath);
+      } catch (_) {
+        // Si falla por un problema de EXIF, reencodeamos la imagen para
+        // eliminar metadatos corruptos y volvemos a intentarlo.
+        final bytes = await File(imagePath).readAsBytes();
+        final img.Image? decoded = img.decodeImage(bytes);
+        if (decoded == null) return null;
+        final String tmpPath =
+            '${File(imagePath).parent.path}/clean_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        await File(tmpPath).writeAsBytes(img.encodeJpg(decoded));
+        inputImage = InputImage.fromFilePath(tmpPath);
+      }
       final faces = await _faceDetector.processImage(inputImage);
 
       if (faces.isEmpty) return null;
