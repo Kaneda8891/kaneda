@@ -15,7 +15,7 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   bool _mostrarPassword = false;
   bool _hasFaceData = false;
 
-  @override
+  @override 
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);

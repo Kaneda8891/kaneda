@@ -51,15 +51,17 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isInitialized = true);
   }
 
-  /// Carga múltiples embeddings desde la imagen de referencia
-  Future<void> _loadReferenceEmbeddings() async {
-    final byteData = await rootBundle.load('assets/tflite/face.jpg');
-    final imageBytes = byteData.buffer.asUint8List();
-    final image = img.decodeImage(imageBytes);
-    if (image != null) {
-      _validEmbeddings = await _faceService.generateAugmentedEmbeddings(image);
-    }
+ /// Carga un embedding único desde la imagen de referencia
+Future<void> _loadReferenceEmbeddings() async {
+  final byteData = await rootBundle.load('assets/tflite/face.jpg');
+  final imageBytes = byteData.buffer.asUint8List();
+  final image = img.decodeImage(imageBytes);
+  if (image != null) {
+    final embedding = await _faceService.predict(image);
+    _validEmbeddings = [embedding]; // Lo envolvemos en una lista para mantener compatibilidad
   }
+}
+
 
   /// Reconocimiento facial con recorte y comparación
   Future<void> _authenticateUser() async {

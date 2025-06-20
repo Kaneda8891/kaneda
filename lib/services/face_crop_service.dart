@@ -40,3 +40,4 @@ class FaceCropService {
     _faceDetector.close();
   }
 }
+

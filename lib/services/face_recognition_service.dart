@@ -1,5 +1,3 @@
-// services/face_recognition_service.dart
-
 import 'dart:typed_data';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;

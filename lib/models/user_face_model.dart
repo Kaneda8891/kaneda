@@ -1,5 +1,3 @@
-// models/user_face_model.dart
-
 import 'dart:math';
 
 class UserFaceModel {
@@ -13,7 +11,6 @@ class UserFaceModel {
     this.imagePath,
   });
 
-  // Para guardar como mapa (por ejemplo, en SharedPreferences o Firestore)
   Map<String, dynamic> toMap() {
     return {
       'name': name,
